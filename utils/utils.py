@@ -898,7 +898,7 @@ def getWriterPath(task='train', exper_name='', date=True):
     if exper_name != '':
         exper_name += '_'
     if date:
-        str_date_time = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+        str_date_time = datetime.datetime.now().strftime("%Y-%m-%d_%H..%M..%S")
     return prefix + task + '/' + exper_name + str_date_time
 
 def crop_or_pad_choice(in_num_points, out_num_points, shuffle=False):

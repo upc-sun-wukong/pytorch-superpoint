@@ -11,7 +11,7 @@ import numpy as np
 from imageio import imread
 
 # from os import path as Path
-import tensorflow as tf
+# import tensorflow as tf
 from pathlib import Path
 import tarfile
 
@@ -112,7 +112,8 @@ class SyntheticDataset_gaussian(data.Dataset):
         # temp_dir = Path(os.environ['TMPDIR'], primitive)
         temp_dir = Path(TMPDIR, primitive)
 
-        tf.logging.info("Generating tarfile for primitive {}.".format(primitive))
+        # tf.logging.info("Generating tarfile for primitive {}.".format(primitive))
+        print("Generating tarfile for primitive {}.".format(primitive))
         synthetic_dataset.set_random_state(
             np.random.RandomState(config["generation"]["random_seed"])
         )
@@ -154,7 +155,8 @@ class SyntheticDataset_gaussian(data.Dataset):
         tar.add(temp_dir, arcname=primitive)
         tar.close()
         shutil.rmtree(temp_dir)
-        tf.logging.info("Tarfile dumped to {}.".format(tar_path))
+        # tf.logging.info("Tarfile dumped to {}.".format(tar_path))
+        print("Tarfile dumped to {}.".format(tar_path))
 
     def parse_primitives(self, names, all_primitives):
         p = (
