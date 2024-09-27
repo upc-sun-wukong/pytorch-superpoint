@@ -138,8 +138,8 @@ class SyntheticDataset_gaussian(data.Dataset):
                 image = cv2.GaussianBlur(image, (b, b), 0)
                 points = (
                     points
-                    * np.array(config["preprocessing"]["resize"], np.float)
-                    / np.array(config["generation"]["image_size"], np.float)
+                    * np.array(config["preprocessing"]["resize"], np.float32)
+                    / np.array(config["generation"]["image_size"], np.float32)
                 )
                 image = cv2.resize(
                     image,

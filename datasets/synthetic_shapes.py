@@ -93,8 +93,8 @@ class SyntheticShapes(BaseDataset):
 
                 b = config['preprocessing']['blur_size']
                 image = cv2.GaussianBlur(image, (b, b), 0)
-                points = (points * np.array(config['preprocessing']['resize'], np.float)
-                          / np.array(config['generation']['image_size'], np.float))
+                points = (points * np.array(config['preprocessing']['resize'], np.float32)
+                          / np.array(config['generation']['image_size'], np.float32))
                 image = cv2.resize(image, tuple(config['preprocessing']['resize'][::-1]),
                                    interpolation=cv2.INTER_LINEAR)
 

@@ -774,7 +774,7 @@ class Train_model_frontend(object):
             pts_nms = getPtsFromHeatmap(semi_thd, conf_thresh, nms_dist)
             semi_thd_nms_sample = np.zeros_like(semi_thd)
             semi_thd_nms_sample[
-                pts_nms[1, :].astype(np.int), pts_nms[0, :].astype(np.int)
+                pts_nms[1, :].astype(np.int32), pts_nms[0, :].astype(np.int32)
             ] = 1
 
             label_sample = torch.squeeze(labels_2D[idx, :, :, :])
