@@ -45,7 +45,7 @@ def worker_init_fn(worker_id):
 def dataLoader(config, dataset='syn', warp_input=False, train=True, val=True):
     import torchvision.transforms as transforms
     training_params = config.get('training', {})
-    workers_train = training_params.get('workers_train', 1) # 16
+    workers_train = training_params.get('workers_train', 1) # 16    #数据集加载 batchsize
     workers_val   = training_params.get('workers_val', 1) # 16
         
     logging.info(f"workers_train: {workers_train}, workers_val: {workers_val}")
@@ -166,6 +166,7 @@ def modelLoader(model='SuperPointNet', **options):
 
 # mode: 'full' means the formats include the optimizer and epoch
 # full_path: if not full path, we need to go through another helper function
+#根据保存的检查点继续训练的代码
 def pretrainedLoader(net, optimizer, epoch, path, mode='full', full_path=False):
     # load checkpoint
     if full_path == True:
