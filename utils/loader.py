@@ -45,8 +45,8 @@ def worker_init_fn(worker_id):
 def dataLoader(config, dataset='syn', warp_input=False, train=True, val=True):
     import torchvision.transforms as transforms
     training_params = config.get('training', {})
-    workers_train = training_params.get('workers_train', 1) # 16    #数据集加载 batchsize
-    workers_val   = training_params.get('workers_val', 1) # 16
+    workers_train = training_params.get('workers_train', 0) # 16    #数据集加载 batchsize
+    workers_val   = training_params.get('workers_val', 0) # 16
         
     logging.info(f"workers_train: {workers_train}, workers_val: {workers_val}")
     data_transforms = {
@@ -84,6 +84,7 @@ def dataLoader(config, dataset='syn', warp_input=False, train=True, val=True):
         pin_memory=True,
         num_workers=workers_val,
         worker_init_fn=worker_init_fn
+
     )
     # val_set, val_loader = None, None
     return {'train_loader': train_loader, 'val_loader': val_loader,
