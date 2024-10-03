@@ -96,11 +96,11 @@ model:
 retrain: True # set true for new model
 reset_iter: True
 
-train_iter: 200000 # 200000
-tensorboard_interval: 1000 # 200
-save_interval: 2000 # 2000
-validation_interval: 1000 # one validation of entire val set every N training steps
-validation_size: 10
+train_iter: 200000 # 200000  训练的总迭代次数
+tensorboard_interval: 1000 # 200 每训练 1000 次后将结果写入 Tensorboard。
+save_interval: 2000 # 2000 每 2000 次训练后保存模型。
+validation_interval: 1000 # one validation of entire val set every N training steps 每 1000 次训练后进行一次验证。
+validation_size: 10 #验证集的大小。每 1000 次训练后显示当前训练结果。
 train_show_interval: 1000 # one show of the current training from to Tensorboard every N training steps
 seed: 0
 
