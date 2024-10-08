@@ -397,7 +397,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     with open(args.config, "r") as f:
-        config = yaml.load(f)
+        config = yaml.load(f, Loader=yaml.FullLoader)
     print("check config!! ", config)
 
     output_dir = os.path.join(EXPER_PATH, args.exper_name)
