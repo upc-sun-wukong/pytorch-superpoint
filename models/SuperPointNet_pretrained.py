@@ -5,6 +5,7 @@ Network to load pretrained model from Magicleap.
 import torch
 import torch.nn as nn
 from torch.nn.init import xavier_uniform_, zeros_
+import torchvision
 
 
 def conv(in_planes, out_planes, kernel_size=3):
@@ -22,11 +23,17 @@ def upconv(in_planes, out_planes):
 
 class SuperPointNet(torch.nn.Module):
   """ Pytorch definition of SuperPoint Network. """
-  def __init__(self):
+  def __init__(self, BATCH_SIZE):
     super(SuperPointNet, self).__init__()
     self.relu = torch.nn.ReLU(inplace=True)
     self.pool = torch.nn.MaxPool2d(kernel_size=2, stride=2)
     c1, c2, c3, c4, c5, d1 = 64, 64, 128, 128, 256, 256
+    # Generate coordinates for rotation-invariant convolution
+    self.coords11 = self.generate_coordinates(BATCH_SIZE, 128, 128)
+    self.coords21 = self.generate_coordinates(BATCH_SIZE, 64, 64)
+    self.coords31 = self.generate_coordinates(BATCH_SIZE, 32, 32)
+    self.coords41 = self.generate_coordinates(BATCH_SIZE, 16, 16)
+
     # Shared Encoder.（特征提取部分）
     self.conv1a = torch.nn.Conv2d(1, c1, kernel_size=3, stride=1, padding=1)
     self.conv1b = torch.nn.Conv2d(c1, c1, kernel_size=3, stride=1, padding=1)
@@ -43,37 +50,87 @@ class SuperPointNet(torch.nn.Module):
     self.convDa = torch.nn.Conv2d(c4, c5, kernel_size=3, stride=1, padding=1)
     self.convDb = torch.nn.Conv2d(c5, d1, kernel_size=1, stride=1, padding=0)
 
-  def forward(self, x):
-    """ Forward pass that jointly computes unprocessed point and descriptor
-    tensors.
-    Input
-      x: Image pytorch tensor shaped N x 1 x H x W.
-    Output
-      semi: Output point pytorch tensor shaped N x 65 x H/8 x W/8.
-      desc: Output descriptor pytorch tensor shaped N x 256 x H/8 x W/8.
-    """
-    # Shared Encoder.
-    x = self.relu(self.conv1a(x))
-    x = self.relu(self.conv1b(x))
-    x = self.pool(x)
-    x = self.relu(self.conv2a(x))
-    x = self.relu(self.conv2b(x))
-    x = self.pool(x)
-    x = self.relu(self.conv3a(x))
-    x = self.relu(self.conv3b(x))
-    x = self.pool(x)
-    x = self.relu(self.conv4a(x))
-    x = self.relu(self.conv4b(x))
-    # Detector Head.
-    cPa = self.relu(self.convPa(x))
-    semi = self.convPb(cPa)
+  def generate_coordinates(self, batch_size, height, width):
+      coords = torch.zeros(height, width, 2 * 3 * 3)
+      center = torch.tensor([height // 2, width // 2], dtype=torch.float32)
+      grid_x, grid_y = torch.meshgrid(torch.arange(height), torch.arange(width))
+      delta_x = grid_x - center[0]
+      delta_y = grid_y - center[1]
+      theta = torch.atan2(delta_y, delta_x) % (2 * torch.pi)
 
-    # Descriptor Head.
-    cDa = self.relu(self.convDa(x))
-    desc = self.convDb(cDa)
-    dn = torch.norm(desc, p=2, dim=1) # Compute the norm.
-    desc = desc.div(torch.unsqueeze(dn, 1)) # Divide by norm to normalize.
-    return semi, desc
+      for i in range(8):
+          angle = theta + i * torch.pi / 4
+          coords[:, :, 2 * i] = torch.cos(angle)
+          coords[:, :, 2 * i + 1] = torch.sin(angle)
+
+      coords = coords.unsqueeze(0).expand(batch_size, -1, -1, -1).permute(0, 3, 1, 2).cuda()
+      return torch.autograd.Variable(coords, requires_grad=False)
+
+  def deform_conv(self, x, conv_layer, coords):
+      return torchvision.ops.deform_conv2d(input=x, offset=coords, weight=conv_layer.weight, padding=(1, 1))
+
+  # def forward(self, x):
+  #   """ Forward pass that jointly computes unprocessed point and descriptor
+  #   tensors.
+  #   Input
+  #     x: Image pytorch tensor shaped N x 1 x H x W.
+  #   Output
+  #     semi: Output point pytorch tensor shaped N x 65 x H/8 x W/8.
+  #     desc: Output descriptor pytorch tensor shaped N x 256 x H/8 x W/8.
+  #   """
+  #   # Shared Encoder.
+  #   x = self.relu(self.conv1a(x))
+  #   x = self.relu(self.conv1b(x))
+  #   x = self.pool(x)
+  #   x = self.relu(self.conv2a(x))
+  #   x = self.relu(self.conv2b(x))
+  #   x = self.pool(x)
+  #   x = self.relu(self.conv3a(x))
+  #   x = self.relu(self.conv3b(x))
+  #   x = self.pool(x)
+  #   x = self.relu(self.conv4a(x))
+  #   x = self.relu(self.conv4b(x))
+  #   # Detector Head.
+  #   cPa = self.relu(self.convPa(x))
+  #   semi = self.convPb(cPa)
+  #
+  #   # Descriptor Head.
+  #   cDa = self.relu(self.convDa(x))
+  #   desc = self.convDb(cDa)
+  #   dn = torch.norm(desc, p=2, dim=1) # Compute the norm.
+  #   desc = desc.div(torch.unsqueeze(dn, 1)) # Divide by norm to normalize.
+
+  def forward(self, x):
+      """ Forward pass with rotation-invariant convolutions. """
+      x = self.relu(self.deform_conv(x, self.conv1a, self.coords11))
+      x = self.relu(self.deform_conv(x, self.conv1b, self.coords11))
+      x = self.pool(x)
+
+      x = self.relu(self.deform_conv(x, self.conv2a, self.coords21))
+      x = self.relu(self.deform_conv(x, self.conv2b, self.coords21))
+      x = self.pool(x)
+
+      x = self.relu(self.deform_conv(x, self.conv3a, self.coords31))
+      x = self.relu(self.deform_conv(x, self.conv3b, self.coords31))
+      x = self.pool(x)
+
+      x = self.relu(self.deform_conv(x, self.conv4a, self.coords41))
+      x = self.relu(self.deform_conv(x, self.conv4b, self.coords41))
+
+      # Detector Head
+      cPa = self.relu(self.deform_conv(x, self.convPa, self.coords41))
+      semi = self.convPb(cPa)
+
+      # Descriptor Head
+      cDa = self.relu(self.deform_conv(x, self.convDa, self.coords41))
+      desc = self.convDb(cDa)
+      desc = desc / torch.norm(desc, p=2, dim=1, keepdim=True)
+
+      return semi, desc
+
+
+
+
 
 
 
