@@ -27,7 +27,7 @@ class SuperPointNet(torch.nn.Module):
     self.relu = torch.nn.ReLU(inplace=True)
     self.pool = torch.nn.MaxPool2d(kernel_size=2, stride=2)
     c1, c2, c3, c4, c5, d1 = 64, 64, 128, 128, 256, 256
-    # Shared Encoder.
+    # Shared Encoder.（特征提取部分）
     self.conv1a = torch.nn.Conv2d(1, c1, kernel_size=3, stride=1, padding=1)
     self.conv1b = torch.nn.Conv2d(c1, c1, kernel_size=3, stride=1, padding=1)
     self.conv2a = torch.nn.Conv2d(c1, c2, kernel_size=3, stride=1, padding=1)
@@ -39,7 +39,7 @@ class SuperPointNet(torch.nn.Module):
     # Detector Head.
     self.convPa = torch.nn.Conv2d(c4, c5, kernel_size=3, stride=1, padding=1)
     self.convPb = torch.nn.Conv2d(c5, 65, kernel_size=1, stride=1, padding=0)
-    # Descriptor Head.
+    # Descriptor Head. 检测头，检测
     self.convDa = torch.nn.Conv2d(c4, c5, kernel_size=3, stride=1, padding=1)
     self.convDb = torch.nn.Conv2d(c5, d1, kernel_size=1, stride=1, padding=0)
 
