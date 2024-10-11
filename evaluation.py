@@ -42,6 +42,10 @@ def draw_matches_cv(data, matches, plot_points=True):
     img2 = to3dim(data['image2'])
     img1 = np.concatenate([img1, img1, img1], axis=2)
     img2 = np.concatenate([img2, img2, img2], axis=2)
+    img_normalized1 = cv2.normalize(img1, None, 0, 255, cv2.NORM_MINMAX)
+    img1 = img_normalized1.astype('uint8')# 将图像转换为 8 位
+    img_normalized2 = cv2.normalize(img1, None, 0, 255, cv2.NORM_MINMAX)
+    img2 = img_normalized1.astype('uint8')# 将图像转换为 8 位
     return cv2.drawMatches(img1, keypoints1, img2, keypoints2, matches,
                            None, matchColor=(0,255,0), singlePointColor=(0, 0, 255))
 

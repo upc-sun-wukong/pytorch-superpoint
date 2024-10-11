@@ -51,8 +51,8 @@ data:
 front_end_model: 'Train_model_heatmap'  # 'Train_model_frontend'
 
 training:
-    workers_train: 4 # 16
-    workers_val: 2 # 2
+    workers_train: 1 # 16
+    workers_val: 1 # 2
 
 model:
     # name: 'magic_point'
@@ -64,8 +64,8 @@ model:
         loss_type: 'softmax'
 
 
-    batch_size: 8 # 32
-    eval_batch_size: 8 # 32
+    batch_size: 2 # 32
+    eval_batch_size: 2 # 32
     learning_rate: 0.0001 # 0.0001
     detection_threshold: 0.015 # 0.015
     lambda_loss: 1 # 1
@@ -93,10 +93,10 @@ model:
 
 retrain: True # set true for new model
 reset_iter: True # set true to set the iteration number to 0
-train_iter: 100 # 170000 20000
-validation_interval: 20 # 2000
-tensorboard_interval: 20 # 200
-save_interval: 20 # 2000
+train_iter: 1000 # 170000 20000
+validation_interval: 40 # 2000
+tensorboard_interval: 40 # 200
+save_interval: 200 # 2000
 validation_size: 5
 
 pretrained: 
