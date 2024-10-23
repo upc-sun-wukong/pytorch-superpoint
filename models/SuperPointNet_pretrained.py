@@ -101,7 +101,7 @@ class SuperPointNet(torch.nn.Module):
   #   desc = desc.div(torch.unsqueeze(dn, 1)) # Divide by norm to normalize.
 
   def forward(self, x):
-      """ Forward pass with rotation-invariant convolutions. """
+      """ Forward pass with rotation-invariant convolutions.旋转不变坐标卷积 """
       x = self.relu(self.deform_conv(x, self.conv1a, self.coords11))
       x = self.relu(self.deform_conv(x, self.conv1b, self.coords11))
       x = self.pool(x)

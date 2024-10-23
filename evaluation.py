@@ -198,7 +198,7 @@ def evaluate(args, **options):
             mscore.append(score)
             # compute map
             if compute_map:
-                def getMatches(data):
+                def getMatches(data):   #特征点匹配
                     from models.model_wrap import PointTracker
 
                     desc = data['desc']
@@ -309,7 +309,7 @@ def evaluate(args, **options):
 
                 img1 = to3dim(img1)
                 img2 = to3dim(img2)
-                H = output['homography']
+                H = output['homography']   #使用计算得到的单应性矩阵扭曲图像/warp图像 单应性矩阵H在compute_homography中得到
                 warped_img1 = cv2.warpPerspective(img1, H, (img2.shape[1], img2.shape[0]))
                 # from numpy.linalg import inv
                 # warped_img1 = cv2.warpPerspective(img1, inv(H), (img2.shape[1], img2.shape[0]))
