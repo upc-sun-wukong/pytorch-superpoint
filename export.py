@@ -13,6 +13,8 @@ import yaml
 import os
 import logging
 from pathlib import Path
+from torchvision import transforms
+import scipy.ndimage
 
 import numpy as np
 from imageio import imread
@@ -27,6 +29,7 @@ import torch.optim
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data
+import cv2
 
 ## other functions
 from utils.utils import (
@@ -66,7 +69,30 @@ def combine_heatmap(heatmap, inv_homographies, mask_2D, device="cpu"):
 
 #### end util functions
 
+def rotate_image_and_points(image, points, angle):
+    """
+    旋转图像和对应的关键点。
+    :param image: 输入图像，numpy 数组。
+    :param points: 输入的关键点，numpy 数组，形状为 (N, 2)。
+    :param angle: 旋转角度。
+    :return: 旋转后的图像和关键点。
+    """
+    # 获取图像中心
+    h, w = image.shape[:2]
+    center = (w // 2, h // 2)
 
+    # 计算旋转矩阵
+    rotation_matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
+
+    # 旋转图像
+    rotated_image = cv2.warpAffine(image, rotation_matrix, (w, h))
+
+    # 旋转关键点
+    ones = np.ones(shape=(points.shape[0], 1))
+    points_homogeneous = np.hstack([points, ones])
+    rotated_points = rotation_matrix.dot(points_homogeneous.T).T
+
+    return rotated_image, rotated_points
 def export_descriptor(config, output_dir, args):
     """
     # input 2 images, output keypoints and correspondence
@@ -181,6 +207,21 @@ def export_descriptor(config, output_dir, args):
             pred.update({"matches": matches.transpose()})
         print("pts: ", pts.shape, ", desc: ", desc.shape)
 
+
+        # 随机生成旋转角度（0-90度）
+        angle = np.random.uniform(0, 90)
+        # 旋转图像和关键点
+        img_0_rotated, pts_rotated = rotate_image_and_points(
+            squeezeToNumpy(img_0), pred["prob"][:, :2], angle
+        )
+        img_1_rotated, pts_warped_rotated = rotate_image_and_points(
+            squeezeToNumpy(img_1), pred["warped_prob"][:, :2], angle
+        )
+        # 更新旋转后的数据
+        pred["image"] = img_0_rotated
+        pred["prob"][:, :2] = pts_rotated
+        pred["warped_image"] = img_1_rotated
+        pred["warped_prob"][:, :2] = pts_warped_rotated
         # clean last descriptor
         tracker.clear_desc()
 
@@ -329,9 +370,9 @@ def export_detector_homoAdapt_gpu(config, output_dir, args):
 
         ## save keypoints
         pred = {}
-        pred.update({"pts": pts})
+        pred.update({"pts": pts}) # 更新预测字典
 
-        ## - make directories
+        ## - make directories 保存旋转后的结果
         filename = str(name)
         if task == "Kitti" or "Kitti_inh":
             scene_name = sample["scene_name"][0]
@@ -340,8 +381,9 @@ def export_detector_homoAdapt_gpu(config, output_dir, args):
         path = Path(save_output, "{}.npz".format(filename))
         np.savez_compressed(path, **pred)
 
-        ## output images for visualization labels
+        ## 在保存预测之前对图像和关键点进行旋转 output images for visualization labels
         if output_images:
+            # 可视化保存旋转后的图像和关键点
             img_pts = draw_keypoints(img_2D * 255, pts.transpose())
             f = save_output / (str(count) + ".png")
             if task == "Coco" or "Kitti":
