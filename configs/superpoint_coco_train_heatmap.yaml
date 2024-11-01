@@ -64,8 +64,8 @@ model:
         loss_type: 'softmax'
 
 
-    batch_size: 2 # 32
-    eval_batch_size: 2 # 32
+    batch_size: 8 # 32
+    eval_batch_size: 4 # 32
     learning_rate: 0.0001 # 0.0001
     detection_threshold: 0.015 # 0.015
     lambda_loss: 1 # 1
